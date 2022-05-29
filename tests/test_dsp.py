@@ -2,18 +2,17 @@ import matploblib.pyplot as plt
 import pandas as pd
 
 from pithy3 import *
-import backend
-import dsp
+import resonance.resonance as resonance
 import exp_params as experimental_params
 
 
 def test(params):
-    dt, waves = backend.get_acoustics(exp_id=params['exp_id'],
+    dt, waves = resonance.backend.get_acoustics(exp_id=params['exp_id'],
                                       machine=params['machine'],
                                       waves_column='data',
                                       n=params['nth'])
     dt -= pd.Timedelta('1 hour')  # Daylight savings...
-    tof_shift_ = dsp.tof_shift(waves=waves)
+    tof_shift_ = resonance.dsp.tof_shift(waves=waves)
     plt.plot(dt, tof_shift_, 'k', linewidth=1)
     showme()
 

@@ -143,7 +143,7 @@ def _query_acoustics(exp_id,
     return data
 
 
-def query_neware(id_, query: str = None):
+def query_neware(id_, query: str = None) -> pd.DataFrame:
     """Queries neware data from drops.
     
     Args:
