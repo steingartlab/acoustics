@@ -5,6 +5,7 @@ import pandas as pd
 import pytz
 import sqlite3
 
+from pithy3 import *
 import resonance.resonance.limit_memory
 
 EST = pytz.timezone('US/Eastern')
@@ -19,8 +20,9 @@ def _generate_neware_path(id_: str) -> str:
     """
     return f"/drops/anyware/unit_{id_.split('-')[0]}/{id_}.sqlite3"
 
+
 def _get_capacity_query():
-    """Cause I do be lazy like that"""
+    """Prewritten query for capacity and CE."""
 
     return """
         SELECT 
@@ -34,6 +36,7 @@ def _get_capacity_query():
         GROUP BY 
             cycle
         """
+
 
 def _parse_waves(waves: pd.DataFrame, waves_column: str) -> np.array:
     """Parses waveforms to write to hd5.
@@ -59,7 +62,11 @@ def _parse_waves(waves: pd.DataFrame, waves_column: str) -> np.array:
 
     return waves_arr
 
-def get_acoustics(exp_id: str, machine: str = 'brix6', waves_column: str = 'amps', n: int = 1) -> np.array:
+
+def get_acoustics(exp_id: str,
+                  machine: str = 'brix6',
+                  waves_column: str = 'amps',
+                  n: int = 1) -> np.array:
     """Saves waves as .hd5 (np.array). Allows for faster reading on subsequent runs.
     
     Args:
@@ -80,31 +87,29 @@ def get_acoustics(exp_id: str, machine: str = 'brix6', waves_column: str = 'amps
         try:
             with h5py.File(f'{path}.h5', 'r') as f:
                 waves = np.array(f['waves'][:], dtype=np.float16)
-            dts = pd.read_csv(
-                f'{path}_datetimes.csv',
-                parse_dates=['time'],
-                infer_datetime_format=True
-            )
+            dts = pd.read_csv(f'{path}_datetimes.csv',
+                              parse_dates=['time'],
+                              infer_datetime_format=True)
             break
-        except (FileNotFoundError, KeyError): # KeyError for corrupt files
+        except (FileNotFoundError, KeyError):  # KeyError for corrupt files
             print("hd5 file doesn\'t exist, generating . . . \n")
             waves_df = _query_acoustics(
                 exp_id=exp_id,
                 machine=machine,
-                additional_params=f'WHERE time % {n} = 0'
-            )
-            waves = _parse_waves(
-                waves=waves_df,
-                waves_column=waves_column
-            )
+                additional_params=f'WHERE time % {n} = 0')
+            waves = _parse_waves(waves=waves_df, waves_column=waves_column)
             with h5py.File(f'{path}.h5', 'w') as f:
                 f.create_dataset('waves', data=waves)
             dts = waves_df.index.to_series()
             dts.to_csv(f'{path}_datetimes.csv', index=False)
 
-    return dts, waves   
+    return dts, waves
 
-def _query_acoustics(exp_id, machine: str = 'brix6', table_name: str = 'table_burst', additional_params: str = None) -> pd.DataFrame:
+
+def _query_acoustics(exp_id,
+                     machine: str = 'brix6',
+                     table_name: str = 'table_burst',
+                     additional_params: str = None) -> pd.DataFrame:
     """Queries sqlite db 'files' from drops.
 
     Note difference between this function and get_acoustics(). This is the lower-level function.
@@ -128,16 +133,15 @@ def _query_acoustics(exp_id, machine: str = 'brix6', table_name: str = 'table_bu
     connection = sqlite3.connect(path)
     query = f'SELECT * FROM {table_name} {additional_params}'
 
-    data = pd.read_sql(
-        sql=query,
-        con=connection,
-        parse_dates='time',
-        index_col='time'
-    )
+    data = pd.read_sql(sql=query,
+                       con=connection,
+                       parse_dates='time',
+                       index_col='time')
 
     data.index = data.index.tz_localize(pytz.utc).tz_convert(EST)
 
     return data
+
 
 def query_neware(id_, query: str = None):
     """Queries neware data from drops.
@@ -155,23 +159,11 @@ def query_neware(id_, query: str = None):
 
     path = _generate_neware_path(id_=id_)
     connection = sqlite3.connect(path)
-    neware_data = pd.read_sql(
-        sql=query,
-        con=connection
-    )
+    neware_data = pd.read_sql(sql=query, con=connection)
 
     if 'unix_time' in neware_data:
-        neware_data['unix_time'] = pd.to_datetime(neware_data['unix_time'], unit='s', utc=True)
+        neware_data['unix_time'] = pd.to_datetime(neware_data['unix_time'],
+                                                  unit='s',
+                                                  utc=True)
 
     return neware_data
-
-# if __name__ == '__main__':
-#     exp_params = experimental_params.exp_params
-#     for cell in exp_params.values():
-#         params = cell
-#         break
-#     dt, _ = test_acoustics(params)
-#     print(dt.head())
-
-#     params = {'neware_id': '220018-1-5-482'}
-#     test_neware(params)

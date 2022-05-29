@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 
+from pithy3 import *
 import resonance.resonance.limit_memory
-import GT_GM_modulus_exp_params as experimental_params
+import exp_params as experimental_params
 import figures
 import backend
 import dsp
@@ -252,24 +253,3 @@ def get_modulus(params):
     # moduli = normalize_moduli(moduli, effective_mod)
 
     return dt, sinusoidal_mod
-
-def main():
-    names = []
-    electrolytes = []
-    dts = []
-    moduli = []
-    for name, params_ in exp_params.items():
-        dt, modulus = get_modulus(params_)
-        names.append(name)
-        electrolytes.append(params_['electrolyte'])
-        dts.append(dt)
-        moduli.append(modulus)
-
-    effective_mod = get_effective_mod(layers_meta)
-    moduli = normalize_moduli(moduli, effective_mod)
-    figures.plot_modulus(dts, moduli, names, electrolytes)
-
-    showme()
-
-if __name__ == '__main__':
-    main()

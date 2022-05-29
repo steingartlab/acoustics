@@ -1,14 +1,9 @@
-##Author: 
-##Date Started:
-##Notes:
-
-from pithy3 import *
-
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
 
+from pithy3 import *
 import resonance.resonance.limit_memory
 import GT_color_palette as colors
 
